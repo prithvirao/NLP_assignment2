@@ -5,8 +5,8 @@ import nltk
 from nltk.corpus import brown
 
 
-from processor import adding_unknown, tokenizer, load_birkbeck_file
-from ngram_model import NGramModel
+from custom_utils.processor import adding_unknown, tokenizer, load_birkbeck_file
+from custom_utils.ngram_model import NGramModel
 
 
 def save_model(model):
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         print(f"{n}-gram model prediction: {model.get_suggestions(previous_tokens)}")
         
 
-    test_df = load_birkbeck_file(file_loc='data/APPLING1DAT.643')
+    test_df = load_birkbeck_file(file_loc='Data/APPLING1DAT.643')
     tokenized_sent, a = tokenizer(test_df['previous-tokens'].values.tolist(), remove_empty=False)
     final_test = adding_unknown(tokenized_sent, vocabulary)
     test_df['final-test'] = final_test
