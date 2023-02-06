@@ -40,7 +40,6 @@ def load_birkbeck_file(file_loc):
     incorrect_words = [line.split()[0] for line in lines if line[0] != '$']
     correct_words = [line.split()[1] for line in lines if line[0] != '$']
     test_lines = [' '.join(line.split()[2:]).replace('\n', '') for line in lines if line[0] != '$']
-
     fill_in_char = '*'
     previous_tokens = [line.split()[:line.split().index(fill_in_char)] for line in test_lines]
     test_df = pd.DataFrame()
@@ -49,10 +48,10 @@ def load_birkbeck_file(file_loc):
     test_df['test-seq'] = test_lines
     return test_df
 
-def evaluate_models(query,result_eval,suggestions,test_df,final_test,n):
+def evaluate_models(query,result_eval,suggestions,testing_data,model_testing_data,n):
         for fill_in_word, test_previous_tokens, suggestion in tqdm(
-                zip(test_df['fill-in-word'], final_test, suggestions),
-                total=len(final_test)):
+                zip(testing_data['fill-in-word'], model_testing_data, suggestions),
+                total=len(model_testing_data)):
             query[f"{' '.join(test_previous_tokens)} *"] = {fill_in_word: 1}
             result_eval[f"{' '.join(test_previous_tokens)} *"] = {}
             for word in [w[0] for w in suggestion[1]]:

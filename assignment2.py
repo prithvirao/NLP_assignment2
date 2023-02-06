@@ -24,46 +24,35 @@ if __name__ == "__main__":
     nltk.download('punkt')
     nltk.download('brown')
     new_list = brown.sents()
-    min_freq = 6
     tokenized_sent, vocabulary = tokenizer(new_list)
-    final_train = adding_unknown(tokenized_sent, vocabulary)
+    model_train_data = adding_unknown(tokenized_sent, vocabulary)
 
     ns = [1, 2, 3, 5, 10]
-    #model_loc = 'models'
-
     for n in ns:
         model = NGramModel(n=n, model_loc='models', vocabulary=vocabulary)
-        model.fit(final_train)
+        model.fit(model_train_data)
         save_model(model)
 
-    previous_tokens = ["the", "jury"]
-
-    for n in ns:
-        model = NGramModel(n=n, model_loc='models', vocabulary=vocabulary)
-        load_model(model)
-        print(f"{n}-gram model prediction: {model.get_suggestions(previous_tokens)}")
-        
-
-    test_df = load_birkbeck_file(file_loc='Data/APPLING1DAT.643')
-    tokenized_sent, a = tokenizer(test_df['previous-tokens'].values.tolist(), remove_empty=False)
-    final_test = adding_unknown(tokenized_sent, vocabulary)
-    test_df['final-test'] = final_test
+    testing_data = load_birkbeck_file(file_loc='Data/APPLING1DAT.643')
+    tokenized_sent, a = tokenizer(testing_data['previous-tokens'].values.tolist(), remove_empty=False)
+    model_testing_data = adding_unknown(tokenized_sent, vocabulary)
+    testing_data['final-test'] = model_testing_data
 
     queries = [{} for _ in ns]
     results_eval = [{} for _ in ns]
 
-    for idx, n in enumerate(ns):
+    for i, n in enumerate(ns):
         model = NGramModel(n=n, model_loc='models', vocabulary=vocabulary)
         load_model(model)
 
-        argument_list = final_test
+        argument_list = model_testing_data
         suggestions = []
         with concurrent.futures.ProcessPoolExecutor() as executor:
             for result in executor.map(model.get_suggestions, argument_list):
                 suggestions.append(result)
 
-        query = queries[idx]
-        result_eval = results_eval[idx]
-        evaluate_models(queries[idx],results_eval[idx],suggestions,test_df,final_test,n)
+        query = queries[i]
+        result_eval = results_eval[i]
+        evaluate_models(queries[i],results_eval[i],suggestions,testing_data,model_testing_data,n)
         
         
