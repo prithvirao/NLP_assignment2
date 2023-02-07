@@ -5,8 +5,8 @@ import nltk
 from nltk.corpus import brown
 
 
-from custom_utils.processor import adding_unknown, tokenizer, load_birkbeck_file
-from custom_utils.ngram_model import NGramModel
+from Custom_Utils.processor import adding_unknown, tokenizer, load_birkbeck_file
+from Custom_Utils.ngram_model import SimpleNGram
 
 
 def save_model(model):
