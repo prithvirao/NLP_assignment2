@@ -3,7 +3,7 @@ import collections
 import pytrec_eval
 from tqdm import tqdm
 import pandas as pd
-
+import numpy as np
 
 def tokenizer(sentences_list: list, remove_empty: bool = True):
     if remove_empty:
@@ -49,27 +49,31 @@ def load_birkbeck_file(file_loc):
     return test_df
 
 def evaluate_models(query,result_eval,suggestions,testing_data,model_testing_data,n):
-        for fill_in_word, test_previous_tokens, suggestion in tqdm(
-                zip(testing_data['fill-in-word'], model_testing_data, suggestions),
-                total=len(model_testing_data)):
-            query[f"{' '.join(test_previous_tokens)} *"] = {fill_in_word: 1}
-            result_eval[f"{' '.join(test_previous_tokens)} *"] = {}
-            for word in [w[0] for w in suggestion[1]]:
-                result_eval[f"{' '.join(test_previous_tokens)} *"][word] = 1
+    for fill_in_word, test_previous_tokens, suggestion in tqdm(
+            zip(testing_data['fill-in-word'], model_testing_data, suggestions),
+            total=len(model_testing_data)):
+        query[f"{' '.join(test_previous_tokens)} *"] = {fill_in_word: 1}
+        result_eval[f"{' '.join(test_previous_tokens)} *"] = {}
+        if len(suggestion) >= n:
+            words_1 = np.array([w[0] for w in suggestion[1]])
+            words_5 = np.array([w[0] for w in suggestion[5]])
+            words_10 = np.array([w[0] for w in suggestion[10]])
 
-            for word in [w[0] for w in suggestion[5]]:
-                if word not in result_eval[f"{' '.join(test_previous_tokens)} *"].keys():
-                    result_eval[f"{' '.join(test_previous_tokens)} *"][word] = 1 / 5
+            result_eval[f"{' '.join(test_previous_tokens)} *"] = {word: 1 for word in words_1}
 
-            for word in [w[0] for w in suggestion[10]]:
-                if word not in result_eval[f"{' '.join(test_previous_tokens)} *"].keys():
-                    result_eval[f"{' '.join(test_previous_tokens)} *"][word] = 1 / 10
-        print('*' * 30)
-        print(f'S@k average of {n}-gram model')
-        print('*' * 30)
-        evaluator = pytrec_eval.RelevanceEvaluator(query, {'success'})
-        eval = evaluator.evaluate(result_eval)
-        for measure in sorted(list(eval[list(eval.keys())[0]].keys())):
-            avg = pytrec_eval.compute_aggregated_measure(measure,[query_measures[measure] for query_measures in eval.values()])
-            print(f"{measure} average: {avg}")
-        print('=' * 50)
+            unique_words_5 = np.setdiff1d(words_5, words_1)
+            result_eval[f"{' '.join(test_previous_tokens)} *"].update({word: 1/5 for word in unique_words_5})
+
+            unique_words_10 = np.setdiff1d(words_10, np.union1d(words_1, words_5))
+            result_eval[f"{' '.join(test_previous_tokens)} *"].update({word: 1/10 for word in unique_words_10})
+        else:
+            print(f"Error: the length of the suggestion list is less than {n}")
+            return
+    print(f'S@k average of {n}-gram model')
+    print('*' * 30)
+    evaluator = pytrec_eval.RelevanceEvaluator(query, {'success'})
+    eval = evaluator.evaluate(result_eval)
+    for measure in sorted(list(eval[list(eval.keys())[0]].keys())):
+        avg = pytrec_eval.compute_aggregated_measure(measure,[query_measures[measure] for query_measures in eval.values()])
+        print(f"{measure} average: {avg}")
+    print('=' * 50)
